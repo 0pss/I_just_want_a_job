@@ -1,0 +1,7 @@
+{% extends 'tracker/base.html' %}
+{% block title %}GOTHAM / JOBS{% endblock %}
+{% block breadcrumb %}JOBS / QUEUE{% endblock %}
+{% block content %}
+<div class="toolbar split"><div><h1>Jobs</h1><div class="subheading">Sortable, column-searchable inventory.</div></div><form id="job-filter" class="filter-form" method="get"><input name="title" value="{{ filters.title|default:'' }}" placeholder="title"><input name="company" value="{{ filters.company|default:'' }}" placeholder="company"><input name="location" value="{{ filters.location|default:'' }}" placeholder="location"><input name="min_score" value="{{ filters.min_score|default:'' }}" placeholder="score ≥"><button class="button primary">Apply</button><a class="button ghost" href="{% url 'tracker:job_list' %}">Reset</a></form></div>
+<div id="job-table">{% include 'tracker/_job_table.html' %}</div>
+{% endblock %}

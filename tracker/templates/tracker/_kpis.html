@@ -1,0 +1,9 @@
+<div class="kpi-strip">
+  <div class="kpi"><div class="kpi-value">{{ kpis.total_jobs }}</div><div class="kpi-label">Jobs tracked</div></div>
+  <div class="kpi"><div class="kpi-value">{{ kpis.new_jobs_24h }}</div><div class="kpi-label">New / 24h</div></div>
+  <div class="kpi"><div class="kpi-value">{{ kpis.total_applied }}</div><div class="kpi-label">Applied</div></div>
+  <div class="kpi"><div class="kpi-value">{{ kpis.reply_rate }}%</div><div class="kpi-label">Reply rate</div></div>
+  <div class="kpi"><div class="kpi-value">{{ kpis.interview_rate }}%</div><div class="kpi-label">Interview rate</div></div>
+  <div class="kpi"><div class="kpi-value">{% if kpis.avg_reply_days != None %}{{ kpis.avg_reply_days }}d{% else %}—{% endif %}</div><div class="kpi-label">Avg response</div></div>
+  <div class="kpi {% if kpis.manual_review_jobs %}kpi-alert{% endif %}"><div class="kpi-value">{{ kpis.manual_review_jobs }}</div><div class="kpi-label">Review queue</div></div>
+</div>

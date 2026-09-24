@@ -1,0 +1,8 @@
+{% extends 'tracker/base.html' %}
+{% block title %}GOTHAM / MAP{% endblock %}
+{% block breadcrumb %}MAP / JOB DISTRIBUTION{% endblock %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block content %}<div class="toolbar split"><div><h1>Job map</h1><div class="subheading">Source coordinates from the BA listing feed.</div></div><div class="mono muted">{{ points_count }} mapped jobs</div></div><div class="panel map-panel"><div id="map"></div></div>{{ points_json|json_script:'map-points' }}{% endblock %}
+{% block scripts %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+const points=JSON.parse(document.getElementById('map-points').textContent); const map=L.map('map',{zoomControl:true}).setView([52.52,13.405],11); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map); const bounds=[]; points.forEach(p=>{const color=p.review?'#d64545':p.score>=8?'#35b37e':'#4c8dff'; const circle=L.circleMarker([p.lat,p.lng],{radius:6,color,fillColor:color,fillOpacity:.8,weight:1}); circle.bindPopup(`<strong>${p.title}</strong><br>${p.company}<br><span class="mono">score ${p.score??'—'}</span><br><a href="${p.url}">Open</a>`).addTo(map); bounds.push([p.lat,p.lng]);}); if(bounds.length) map.fitBounds(bounds,{padding:[30,30]});
+</script>{% endblock %}

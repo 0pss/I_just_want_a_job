@@ -1,0 +1,17 @@
+{% extends 'tracker/base.html' %}
+{% block title %}GOTHAM / ANALYTICS{% endblock %}
+{% block breadcrumb %}ANALYTICS / FLOW{% endblock %}
+{% block content %}
+{% include 'tracker/_kpis.html' %}
+<div class="chart-grid"><section class="panel chart-panel"><div class="panel-head"><div><div class="eyebrow">30 DAYS</div><h2>Jobs vs applications</h2></div></div><div id="trend-chart" class="chart"></div></section><section class="panel chart-panel"><div class="panel-head"><div><div class="eyebrow">STATE TRANSITIONS</div><h2>Application flow</h2></div></div><div id="sankey-chart" class="chart"></div></section></div>
+{{ jobs_per_day|json_script:'jobs-per-day' }}
+{{ applications_per_day|json_script:'applications-per-day' }}
+{{ sankey|json_script:'sankey-data' }}
+{% endblock %}
+{% block scripts %}<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script><script>
+const jobs = JSON.parse(document.getElementById('jobs-per-day').textContent); const apps = JSON.parse(document.getElementById('applications-per-day').textContent); const sankey = JSON.parse(document.getElementById('sankey-data').textContent);
+const trend = echarts.init(document.getElementById('trend-chart')); const dates = [...new Set([...jobs.map(x=>x.date), ...apps.map(x=>x.date)])].sort(); const jmap=Object.fromEntries(jobs.map(x=>[x.date,x.count])); const amap=Object.fromEntries(apps.map(x=>[x.date,x.count]));
+trend.setOption({backgroundColor:'transparent',tooltip:{trigger:'axis'},legend:{textStyle:{color:'#9aa3b4'}},grid:{left:40,right:20,top:35,bottom:35},xAxis:{type:'category',data:dates,axisLabel:{color:'#6b7386'}},yAxis:{type:'value',axisLabel:{color:'#6b7386'},splitLine:{lineStyle:{color:'#232838'}}},series:[{name:'Jobs',type:'line',smooth:true,data:dates.map(d=>jmap[d]||0)},{name:'Applications',type:'line',smooth:true,data:dates.map(d=>amap[d]||0)}]});
+const sk=echarts.init(document.getElementById('sankey-chart')); const nodes=[...new Set(sankey.flatMap(x=>[x.source,x.target]))].map(name=>({name})); sk.setOption({backgroundColor:'transparent',tooltip:{trigger:'item'},series:[{type:'sankey',data:nodes,links:sankey,emphasis:{focus:'adjacency'},lineStyle:{color:'gradient',curveness:.5},label:{color:'#dde3ee'}}]});
+window.addEventListener('resize',()=>{trend.resize();sk.resize()});
+</script>{% endblock %}

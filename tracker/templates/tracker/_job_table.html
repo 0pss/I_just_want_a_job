@@ -1,0 +1,48 @@
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr class="header-row">
+        <th><a href="?{% querystring sort='-score' %}">Score</a></th>
+        <th><a href="?{% querystring sort='-buzzword' %}">Buzz</a></th>
+        <th><a href="?{% querystring sort='-divergence' %}">Δ</a></th>
+        <th><a href="?{% querystring sort='title' %}">Title</a></th>
+        <th><a href="?{% querystring sort='company' %}">Company</a></th>
+        <th><a href="?{% querystring sort='location' %}">Location</a></th>
+        <th>Status</th>
+        <th><a href="?{% querystring sort='-first_seen' %}">First seen</a></th>
+      </tr>
+      <tr class="filter-row">
+        <th><input form="job-filter" name="min_score" value="{{ filters.min_score|default:'' }}" placeholder="≥" inputmode="decimal"></th>
+        <th></th>
+        <th><select form="job-filter" name="manual"><option value="">all</option><option value="yes" {% if filters.manual == 'yes' %}selected{% endif %}>review</option><option value="no" {% if filters.manual == 'no' %}selected{% endif %}>ok</option></select></th>
+        <th><input form="job-filter" name="title" value="{{ filters.title|default:'' }}" placeholder="search"></th>
+        <th><input form="job-filter" name="company" value="{{ filters.company|default:'' }}" placeholder="search"></th>
+        <th><input form="job-filter" name="location" value="{{ filters.location|default:'' }}" placeholder="search"></th>
+        <th><select form="job-filter" name="status"><option value="">all</option><option value="unapplied" {% if filters.status == 'unapplied' %}selected{% endif %}>unapplied</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></th>
+        <th><input form="job-filter" name="ref" value="{{ filters.ref|default:'' }}" placeholder="ref"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in page_obj %}
+      <tr class="data-row {% if job.manual_review %}row-review{% endif %}" onclick="window.location='{{ job.get_absolute_url }}'">
+        <td class="mono score-cell">{% if job.llm_score != None %}{{ job.llm_score|floatformat:1 }}{% else %}—{% endif %}</td>
+        <td class="mono">{% if job.buzzword_score != None %}{{ job.buzzword_score|floatformat:1 }}{% else %}—{% endif %}</td>
+        <td class="mono {% if job.manual_review %}danger-text{% endif %}">{% if job.score_divergence != None %}{{ job.score_divergence|floatformat:1 }}{% else %}—{% endif %}</td>
+        <td><div class="cell-main">{{ job.titel|truncatechars:58 }}</div><div class="cell-sub mono">{{ job.referenznummer }}</div></td>
+        <td>{{ job.firma|truncatechars:30 }}</td>
+        <td>{{ job.ort }}{% if job.entfernung_km != None %} <span class="muted mono">{{ job.entfernung_km|floatformat:0 }}km</span>{% endif %}</td>
+        <td>
+          {% if job.application %}<span class="badge status-{{ job.application.current_status }}">{{ job.application.get_current_status_display }}</span>{% else %}<span class="badge badge-muted">Unapplied</span>{% endif %}
+        </td>
+        <td class="mono muted">{{ job.first_seen|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="empty">No jobs match the current filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pager">
+  <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  <div>{% if page_obj.has_previous %}<a class="button ghost" href="?{% querystring page=page_obj.previous_page_number %}">Prev</a>{% endif %}{% if page_obj.has_next %}<a class="button ghost" href="?{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}</div>
+</div>

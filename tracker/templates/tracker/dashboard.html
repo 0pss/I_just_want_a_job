@@ -1,0 +1,26 @@
+{% extends 'tracker/base.html' %}
+{% block title %}GOTHAM / OVERVIEW{% endblock %}
+{% block breadcrumb %}OVERVIEW / JOB OPS{% endblock %}
+{% block content %}
+{% include 'tracker/_kpis.html' %}
+<div class="toolbar split">
+  <div><h1>Job queue</h1><div class="subheading">Dense view of discovered roles, fit signals and application state.</div></div>
+  <form id="job-filter" class="filter-form" method="get" hx-get="{% url 'tracker:dashboard' %}" hx-target="#job-table" hx-push-url="true">
+    <input name="q" value="{{ filters.q|default:'' }}" placeholder="title / company / role">
+    <input name="min_score" value="{{ filters.min_score|default:'' }}" placeholder="min score">
+    <button class="button primary" type="submit">Filter</button>
+    <a class="button ghost" href="{% url 'tracker:dashboard' %}">Reset</a>
+  </form>
+</div>
+<div id="job-table">{% include 'tracker/_job_table.html' %}</div>
+<div class="two-col">
+  <section class="panel">
+    <div class="panel-head"><div><div class="eyebrow">REVIEW QUEUE</div><h2>Score divergence</h2></div><a href="{% url 'tracker:job_list' %}?manual=yes" class="button ghost">Open all</a></div>
+    {% for job in review_jobs %}<a class="event-row" href="{{ job.get_absolute_url }}"><span class="event-main"><strong>{{ job.titel }}</strong><span>{{ job.firma }}</span></span><span class="mono danger-text">Δ {{ job.score_divergence|floatformat:1 }}</span></a>{% empty %}<div class="empty">No divergence flags.</div>{% endfor %}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><div class="eyebrow">RECENT EVENTS</div><h2>Application activity</h2></div><a href="{% url 'tracker:analytics' %}" class="button ghost">Analytics</a></div>
+    {% for event in recent_events %}<a class="event-row" href="{{ event.application.job.get_absolute_url }}"><span class="event-time mono">{{ event.timestamp|date:"m-d H:i" }}</span><span class="event-main"><strong>{{ event.application.job.titel|truncatechars:44 }}</strong><span>{{ event.get_status_display|default:event.event_type }}</span></span></a>{% empty %}<div class="empty">No events yet.</div>{% endfor %}
+  </section>
+</div>
+{% endblock %}
