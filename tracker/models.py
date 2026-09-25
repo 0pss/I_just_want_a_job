@@ -275,3 +275,42 @@ class ApplicationDocument(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+class AppConfig(models.Model):
+    """Single-user editable scoring configuration."""
+    key = models.CharField(max_length=100, unique=True)
+    candidate_profile = models.TextField(default="", blank=True)
+    system_prompt = models.TextField(default="", blank=True)
+    buzzwords = models.JSONField(default=list, blank=True)
+    divergence_threshold = models.FloatField(default=3.0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.key
+
+
+class BackgroundTask(models.Model):
+    class Kind(models.TextChoices):
+        SEARCH = "search", "Job search"
+        DESCRIPTIONS = "descriptions", "Job descriptions"
+        SCORE = "score", "LLM rating"
+        FULL_PIPELINE = "full_pipeline", "Full pipeline"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        DONE = "done", "Done"
+        FAILED = "failed", "Failed"
+
+    kind = models.CharField(max_length=30, choices=Kind.choices)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.QUEUED)
+    progress = models.PositiveIntegerField(default=0)
+    total = models.PositiveIntegerField(default=0)
+    message = models.CharField(max_length=500, blank=True)
+    error = models.TextField(blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
