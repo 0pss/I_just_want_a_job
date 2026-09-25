@@ -13,14 +13,17 @@ def _jobs(request):
     if request.GET.get("status")=="unapplied": qs=qs.filter(applications__isnull=True)
     elif request.GET.get("status"): qs=qs.filter(applications__current_status=request.GET["status"])
     if request.GET.get("min_score","").isdigit(): qs=qs.filter(llm_score__gte=int(request.GET["min_score"]))
-    if request.GET.get("manual")=="yes": qs=qs.filter(manual_review=True)\n    elif request.GET.get("manual")=="no": qs=qs.filter(manual_review=False)
+    if request.GET.get("manual")=="yes": qs=qs.filter(manual_review=True)
+    elif request.GET.get("manual")=="no": qs=qs.filter(manual_review=False)
     if request.GET.get("homeoffice")=="yes": qs=qs.filter(homeoffice=True)
     if request.GET.get("homeoffice")=="no": qs=qs.filter(homeoffice=False)
     sort=request.GET.get("sort","score"); return qs.distinct().order_by(SORT_FIELDS.get(sort,"-llm_score"),"-first_seen"),sort
 def dashboard(request):
     jobs,sort=_jobs(request); ctx={"page_obj":Paginator(jobs,25).get_page(request.GET.get("page",1)),"sort":sort,"kpis":compute_kpis(),"status_choices":Application.Status.choices,"distinct_orte":Job.objects.exclude(ort="").values_list("ort",flat=True).distinct().order_by("ort"),"filters":request.GET}
     if request.htmx:return render(request,"tracker/_job_table.html",ctx)
-    ctx["active_tasks"] = BackgroundTask.objects.filter(status__in=["queued","running"])[:8]\n    ctx["review_jobs"] = Job.objects.filter(manual_review=True).order_by("-score_divergence")[:8]\n    return render(request,"tracker/dashboard.html",ctx)
+    ctx["active_tasks"] = BackgroundTask.objects.filter(status__in=["queued","running"])[:8]
+    ctx["review_jobs"] = Job.objects.filter(manual_review=True).order_by("-score_divergence")[:8]
+    return render(request,"tracker/dashboard.html",ctx)
 job_list=dashboard
 def job_detail(request,referenznummer):
     job=get_object_or_404(Job,referenznummer=referenznummer); app=job.application
@@ -34,7 +37,10 @@ def job_detail(request,referenznummer):
         elif action=="document": create_document(job,request.POST.get("document_type","cover_letter"),get_active_profile())
         return redirect("tracker:job_detail",referenznummer=referenznummer)
     return render(request,"tracker/job_detail.html",{"job":job,"application":app,"events":app.events.select_related("email_message").order_by("-timestamp") if app else [],"documents":job.documents.all(),"status_choices":Application.Status.choices})
-def toggle_saved(request, referenznummer):\n    job=get_object_or_404(Job,referenznummer=referenznummer); job.saved=not job.saved; job.save(update_fields=["saved"]); return redirect(request.META.get("HTTP_REFERER","tracker:dashboard"))\n\ndef mark_applied(request,referenznummer):
+def toggle_saved(request, referenznummer):
+    job=get_object_or_404(Job,referenznummer=referenznummer); job.saved=not job.saved; job.save(update_fields=["saved"]); return redirect(request.META.get("HTTP_REFERER","tracker:dashboard"))
+
+def mark_applied(request,referenznummer):
     job=get_object_or_404(Job,referenznummer=referenznummer); app,created=Application.objects.get_or_create(job=job)
     if created: ApplicationEvent.objects.create(application=app,event_type=ApplicationEvent.EventType.STATUS_CHANGED,status=Application.Status.APPLIED,source=ApplicationEvent.Source.MANUAL)
     return redirect(request.META.get("HTTP_REFERER","tracker:job_list"))
