@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}GOTHAM / JOB OPS{% endblock %}</title>
+  <title>{% block title %}I JUST WANT A JOB{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 <body>
 <div class="shell">
   <aside class="sidebar">
-    <div class="brand"><span class="brand-mark">G</span><span>GOTHAM</span></div>
+    <div class="brand"><span class="brand-mark">J</span><span>I JUST WANT A JOB</span></div>
     <div class="nav-label">Operations</div>
     <nav>
       <a class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'tracker:dashboard' %}">Overview</a>
@@ -38,7 +38,7 @@
   <main class="main">
     <header class="topbar">
       <div>{% block breadcrumb %}OVERVIEW{% endblock %}</div>
-      <div class="topbar-right"><span class="live-dot"></span><span>LOCAL OPS</span><span id="clock" class="mono"></span></div>
+      <div class="topbar-right"><button class="button ghost" type="button" id="font-size-toggle">A+</button><span class="live-dot"></span><span>LOCAL OPS</span><span id="clock" class="mono"></span></div>
     </header>
 
     {% if messages %}
