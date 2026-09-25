@@ -324,13 +324,7 @@ def evaluate_job(job: Job, profile: CandidateProfile, llama_server=None):
         {"role": "system", "content": get_app_config().system_prompt or SYSTEM_PROMPT},
         {
             "role": "user",
-            "content": f"CANDIDATE PROFILE:
-{profile.profile_text}
-
-JOB TITLE: {job.titel}
-COMPANY: {job.firma}
-DESCRIPTION:
-{job.beschreibung[:9000]}",
+            "content": f"CANDIDATE PROFILE:\n{profile.profile_text}\n\nJOB TITLE: {job.titel}\nCOMPANY: {job.firma}\nDESCRIPTION:\n{job.beschreibung[:9000]}",
         },
     ]
     if llama_server is None:
