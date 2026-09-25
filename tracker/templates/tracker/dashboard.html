@@ -3,7 +3,7 @@
 {% block breadcrumb %}OVERVIEW / JOB OPS{% endblock %}
 {% block content %}
 {% include 'tracker/_kpis.html' %}
-<div class="toolbar split">
+<div class="panel pipeline-panel"><div class="panel-head"><div><div class="eyebrow">PIPELINE</div><h2>Background operations</h2></div><a class="button ghost" href="{% url 'tracker:settings' %}">Configure</a></div><div class="task-actions"><form method="post" action="{% url 'tracker:start_task' %}">{% csrf_token %}<input type="hidden" name="kind" value="search"><button class="button primary">Search jobs</button></form><form method="post" action="{% url 'tracker:start_task' %}">{% csrf_token %}<input type="hidden" name="kind" value="descriptions"><input name="limit" type="number" value="100"><button class="button primary">Fetch descriptions</button></form><form method="post" action="{% url 'tracker:start_task' %}">{% csrf_token %}<input type="hidden" name="kind" value="score"><input name="limit" type="number" value="25"><button class="button primary">Rate jobs</button></form></div>{% for task in active_tasks %}<div class="config-row"><span>{{ task.get_kind_display }} — {{ task.message }}</span><span class="mono">{{ task.progress }}/{{ task.total }}</span></div>{% endfor %}</div><div class="toolbar split">
   <div><h1>Job queue</h1><div class="subheading">Dense view of discovered roles, fit signals and application state.</div></div>
   <form id="job-filter" class="filter-form" method="get" hx-get="{% url 'tracker:dashboard' %}" hx-target="#job-table" hx-push-url="true">
     <input name="q" value="{{ filters.q|default:'' }}" placeholder="title / company / role">
