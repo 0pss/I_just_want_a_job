@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Application, ApplicationEvent, BlacklistEntry, CandidateProfile, EmailMessage, Job, JobSearch, BackgroundTask
 from .services import compute_kpis, generate_document as create_document, get_active_profile, sankey_edges, trend_series, get_app_config, queue_task, background_search, background_descriptions, background_score
 
-SORT_FIELDS={"score":"-llm_score","-score":"llm_score","buzzword":"-buzzword_score","-buzzword":"buzzword_score","divergence":"-score_divergence","-divergence":"score_divergence","date":"-first_seen","-date":"first_seen","company":"firma","-company":"-firma","distance":"entfernung_km","-distance":"-entfernung_km"}
+SORT_FIELDS={"score":"-llm_score","-score":"llm_score","buzzword":"-buzzword_score","-buzzword":"buzzword_score","divergence":"-score_divergence","-divergence":"score_divergence","date":"-first_seen","-date":"first_seen","company":"firma","-company":"-firma","title":"titel","-title":"-titel","location":"ort","-location":"-ort","distance":"entfernung_km","-distance":"-entfernung_km"}
 def _jobs(request):
     qs=Job.objects.all(); q=request.GET.get("q","").strip()
     if q: qs=qs.filter(Q(titel__icontains=q)|Q(firma__icontains=q)|Q(beruf__icontains=q)|Q(ort__icontains=q))
