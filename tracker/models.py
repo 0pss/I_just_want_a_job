@@ -96,7 +96,7 @@ class Job(models.Model):
     buzzword_hits = models.JSONField(default=list, blank=True)
     buzzword_scored_at = models.DateTimeField(null=True, blank=True)
     score_divergence = models.FloatField(null=True, blank=True)
-    manual_review = models.BooleanField(default=False)
+    manual_review = models.BooleanField(default=False)\n    saved = models.BooleanField(default=False)
 
     first_seen = models.DateTimeField(default=timezone.now)
     last_seen = models.DateTimeField(default=timezone.now)
