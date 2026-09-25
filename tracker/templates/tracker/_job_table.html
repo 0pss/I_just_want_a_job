@@ -8,7 +8,7 @@
         <th><a href="?{% querystring sort='title' %}">Title</a></th>
         <th><a href="?{% querystring sort='company' %}">Company</a></th>
         <th><a href="?{% querystring sort='location' %}">Location</a></th>
-        <th>Status</th>
+        <th>Status</th><th>Merken</th>
         <th><a href="?{% querystring sort='-first_seen' %}">First seen</a></th>
       </tr>
       <tr class="filter-row">
@@ -34,10 +34,10 @@
         <td>
           {% if job.application %}<span class="badge status-{{ job.application.current_status }}">{{ job.application.get_current_status_display }}</span>{% else %}<span class="badge badge-muted">Unapplied</span>{% endif %}
         </td>
-        <td class="mono muted">{{ job.first_seen|date:"Y-m-d H:i" }}</td>
+        <td class="mono muted">{{ job.first_seen|date:"Y-m-d H:i" }}</td><td onclick="event.stopPropagation()"><form method="post" action="{% url 'tracker:toggle_saved' job.referenznummer %}">{% csrf_token %}<button class="button ghost save-button" title="Für später merken">{% if job.saved %}★{% else %}☆{% endif %}</button></form></td>
       </tr>
       {% empty %}
-      <tr><td colspan="8" class="empty">No jobs match the current filters.</td></tr>
+      <tr><td colspan="9" class="empty">No jobs match the current filters.</td></tr>
       {% endfor %}
     </tbody>
   </table>
