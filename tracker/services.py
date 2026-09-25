@@ -185,14 +185,14 @@ def update_job_description(job: Job):
     return job
 
 
-def score_buzzwords(text: str):
+def get_app_config():\n    cfg, _ = AppConfig.objects.get_or_create(key="default", defaults={"candidate_profile": "", "system_prompt": SYSTEM_PROMPT, "buzzwords": BUZZWORDS})\n    return cfg\n\ndef score_buzzwords(text: str):
     if not text:
         return 0.0, []
     normalized = re.sub(r"\s+", " ", text.lower())
     words = re.findall(r"\b[\wäöüß+#./-]+\b", normalized)
     word_count = max(len(words), 1)
     hits = []
-    for term in BUZZWORDS:
+    for term in (get_app_config().buzzwords or BUZZWORDS):
         if re.search(r"(?<!\w)" + re.escape(term.lower()) + r"(?!\w)", normalized):
             hits.append(term)
     # Unique-term density prevents long descriptions from winning purely through repetition.
@@ -317,7 +317,7 @@ def get_active_profile():
 def evaluate_job(job: Job, profile: CandidateProfile, llama_server=None):
     buzz_score, buzz_hits = score_buzzwords(job.beschreibung)
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": get_app_config().system_prompt or SYSTEM_PROMPT},
         {
             "role": "user",
             "content": f"CANDIDATE PROFILE:\n{profile.profile_text}\n\nJOB TITLE: {job.titel}\nCOMPANY: {job.firma}\nDESCRIPTION:\n{job.beschreibung[:9000]}",
@@ -336,7 +336,7 @@ def evaluate_job(job: Job, profile: CandidateProfile, llama_server=None):
     pro = [str(x)[:100] for x in parsed.get("pro", [])][:4]
     contra = [str(x)[:100] for x in parsed.get("contra", [])][:4]
     divergence = round(abs(llm_score - buzz_score), 1)
-    threshold = settings.JOBTRACKER["BUZZWORD_DIVERGENCE_THRESHOLD"]
+    threshold = get_app_config().divergence_threshold
 
     evaluation = JobEvaluation.objects.create(
         job=job,
@@ -617,3 +617,70 @@ def sankey_edges():
                 edges[key] = edges.get(key, 0) + 1
             previous = status
     return [{"source": s, "target": t, "value": v} for (s, t), v in edges.items()]
+
+from concurrent.futures import ThreadPoolExecutor
+_TASK_EXECUTOR = ThreadPoolExecutor(max_workers=2)
+
+def _run_background(task_id, fn):
+    task = BackgroundTask.objects.get(pk=task_id)
+    task.status = BackgroundTask.Status.RUNNING
+    task.started_at = timezone.now()
+    task.save(update_fields=["status", "started_at"])
+    try:
+        fn(task)
+        task.status = BackgroundTask.Status.DONE
+        task.finished_at = timezone.now()
+        task.save(update_fields=["status", "finished_at"])
+    except Exception as exc:
+        task.status = BackgroundTask.Status.FAILED
+        task.error = str(exc)
+        task.finished_at = timezone.now()
+        task.save(update_fields=["status", "error", "finished_at"])
+
+def queue_task(kind, fn):
+    task = BackgroundTask.objects.create(kind=kind, status=BackgroundTask.Status.QUEUED)
+    _TASK_EXECUTOR.submit(_run_background, task.pk, fn)
+    return task
+
+def background_search(task, search_ids=None):
+    searches = list(JobSearch.objects.filter(active=True).order_by("pk"))
+    if search_ids:
+        searches = [s for s in searches if s.pk in search_ids]
+    task.total = len(searches)
+    task.save(update_fields=["total"])
+    for idx, search in enumerate(searches, 1):
+        for page in range(1, 21):
+            data, rows, created, updated = sync_ba_jobs(search.was, search.wo, search.page_size, page, search.radius_km)
+            if not rows or len(rows) < search.page_size:
+                break
+        task.progress = idx
+        task.message = f"Finished search: {search.name}"
+        task.save(update_fields=["progress", "message"])
+
+def background_descriptions(task, limit=100):
+    jobs = list(Job.objects.filter(beschreibung="", description_fetched_at__isnull=True).order_by("first_seen")[:limit])
+    task.total = len(jobs)
+    task.save(update_fields=["total"])
+    for idx, job in enumerate(jobs, 1):
+        update_job_description(job)
+        task.progress = idx
+        task.message = job.titel[:480]
+        task.save(update_fields=["progress", "message"])
+
+def background_score(task, limit=25):
+    jobs = list(Job.objects.filter(beschreibung__gt="", llm_score__isnull=True).order_by("-first_seen")[:limit])
+    cfg = get_app_config()
+    profile = CandidateProfile.objects.filter(active=True).order_by("-version").first()
+    if not profile:
+        profile = CandidateProfile.objects.create(name="Web profile", profile_text=cfg.candidate_profile, version=1, active=True)
+    elif cfg.candidate_profile and profile.profile_text != cfg.candidate_profile:
+        profile.profile_text = cfg.candidate_profile
+        profile.save(update_fields=["profile_text"])
+    task.total = len(jobs)
+    task.save(update_fields=["total"])
+    with LlamaServer():
+        for idx, job in enumerate(jobs, 1):
+            evaluate_job(job, profile)
+            task.progress = idx
+            task.message = job.titel[:480]
+            task.save(update_fields=["progress", "message"])
