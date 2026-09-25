@@ -13,7 +13,7 @@ def _jobs(request):
     if request.GET.get("status")=="unapplied": qs=qs.filter(applications__isnull=True)
     elif request.GET.get("status"): qs=qs.filter(applications__current_status=request.GET["status"])
     if request.GET.get("min_score","").isdigit(): qs=qs.filter(llm_score__gte=int(request.GET["min_score"]))
-    if request.GET.get("review")=="1": qs=qs.filter(manual_review=True)
+    if request.GET.get("manual")=="yes": qs=qs.filter(manual_review=True)\n    elif request.GET.get("manual")=="no": qs=qs.filter(manual_review=False)
     if request.GET.get("homeoffice")=="yes": qs=qs.filter(homeoffice=True)
     if request.GET.get("homeoffice")=="no": qs=qs.filter(homeoffice=False)
     sort=request.GET.get("sort","score"); return qs.distinct().order_by(SORT_FIELDS.get(sort,"-llm_score"),"-first_seen"),sort
