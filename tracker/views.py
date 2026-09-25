@@ -34,7 +34,7 @@ def job_detail(request,referenznummer):
         elif action=="document": create_document(job,request.POST.get("document_type","cover_letter"),get_active_profile())
         return redirect("tracker:job_detail",referenznummer=referenznummer)
     return render(request,"tracker/job_detail.html",{"job":job,"application":app,"events":app.events.select_related("email_message").order_by("-timestamp") if app else [],"documents":job.documents.all(),"status_choices":Application.Status.choices})
-def mark_applied(request,referenznummer):
+def toggle_saved(request, referenznummer):\n    job=get_object_or_404(Job,referenznummer=referenznummer); job.saved=not job.saved; job.save(update_fields=["saved"]); return redirect(request.META.get("HTTP_REFERER","tracker:dashboard"))\n\ndef mark_applied(request,referenznummer):
     job=get_object_or_404(Job,referenznummer=referenznummer); app,created=Application.objects.get_or_create(job=job)
     if created: ApplicationEvent.objects.create(application=app,event_type=ApplicationEvent.EventType.STATUS_CHANGED,status=Application.Status.APPLIED,source=ApplicationEvent.Source.MANUAL)
     return redirect(request.META.get("HTTP_REFERER","tracker:job_list"))
