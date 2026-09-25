@@ -1,6 +1,38 @@
 {% extends 'tracker/base.html' %}
-{% block title %}GOTHAM / SETTINGS{% endblock %}
+{% block title %}I JUST WANT A JOB / SETTINGS{% endblock %}
 {% block breadcrumb %}SYSTEM / SETTINGS{% endblock %}
 {% block content %}
-<div class="two-col"><section class="panel"><div class="eyebrow">BLACKLIST</div><h2>Employer exclusions</h2><form method="post" class="stack-form">{% csrf_token %}<input name="term" placeholder="company substring"><input name="reason" placeholder="reason (optional)"><button class="button primary">Add</button></form><div class="list-block">{% for item in blacklist %}<div class="list-row"><span><strong>{{ item.term }}</strong><span class="muted">{{ item.reason }}</span></span><a class="danger-link" href="{% url 'tracker:delete_blacklist_entry' item.pk %}">delete</a></div>{% empty %}<div class="empty">No blacklist entries.</div>{% endfor %}</div></section><section class="panel"><div class="eyebrow">CONFIGURATION</div><h2>Local state</h2><div class="config-row"><span>Candidate profile</span><strong>{{ profile|default:'missing' }}</strong></div><div class="config-row"><span>Job searches</span><strong>{{ searches|length }}</strong></div><div class="config-row"><span>Scoring</span><strong>llama.cpp managed</strong></div><div class="config-row"><span>Review threshold</span><strong>3.0 points</strong></div><div class="muted note">Edit prompt/model paths in .env or directly through the Django admin for profile/search data.</div></section></div>
+<div class="settings-grid">
+<section class="panel">
+<div class="eyebrow">CANDIDATE PROFILE</div><h2>Profile used for fit scoring</h2>
+<form method="post" class="stack-form">{% csrf_token %}<input type="hidden" name="action" value="config">
+<textarea name="candidate_profile" rows="10" class="config-textarea" placeholder="Skills, constraints, preferences...">{{ config.candidate_profile }}</textarea>
+<div class="eyebrow">SYSTEM PROMPT</div><textarea name="system_prompt" rows="12" class="config-textarea">{{ config.system_prompt }}</textarea>
+<div class="eyebrow">BUZZWORDS</div><textarea name="buzzwords" rows="10" class="config-textarea" placeholder="one positive term per line">{% for word in config.buzzwords %}{{ word }}
+{% endfor %}</textarea>
+<label>Divergence threshold <input name="divergence_threshold" type="number" step="0.1" value="{{ config.divergence_threshold }}"></label>
+<button class="button primary">Save scoring configuration</button></form>
+</section>
+<section class="panel">
+<div class="eyebrow">JOB SEARCHES</div><h2>Sequential search definitions</h2>
+<form method="post" class="stack-form">{% csrf_token %}<input type="hidden" name="action" value="search">
+<input name="name" placeholder="Search name" required><input name="was" placeholder="What (e.g. Python Data Engineer)">
+<input name="wo" value="Berlin" placeholder="Where"><input name="radius_km" type="number" value="50"><input name="page_size" type="number" value="25">
+<button class="button primary">Add search</button></form>
+<div class="list-block">{% for s in searches %}<div class="list-row"><span><strong>{{ s.name }}</strong><span class="muted">{{ s.was }} / {{ s.wo }} / {{ s.radius_km }}km</span></span><form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_search"><input type="hidden" name="search_id" value="{{ s.pk }}"><button class="button ghost">{{ s.active|yesno:"active,paused" }}</button></form></div>{% empty %}<div class="empty">No searches.</div>{% endfor %}</div>
+<form method="post" action="{% url 'tracker:start_task' %}" class="task-form">{% csrf_token %}<input type="hidden" name="kind" value="search">{% for s in searches %}{% if s.active %}<label><input type="checkbox" name="search_ids" value="{{ s.pk }}" checked> {{ s.name }}</label>{% endif %}{% endfor %}<button class="button primary">Run selected searches</button></form>
+</section>
+<section class="panel">
+<div class="eyebrow">BLACKLIST</div><h2>Employer exclusions</h2>
+<form method="post" class="stack-form">{% csrf_token %}<input type="hidden" name="action" value="blacklist"><input name="term" placeholder="company substring" required><input name="reason" placeholder="reason"><button class="button primary">Add</button></form>
+{% for item in blacklist %}<div class="list-row"><span><strong>{{ item.term }}</strong> <span class="muted">{{ item.reason }}</span></span><a class="danger-link" href="{% url 'tracker:delete_blacklist_entry' item.pk %}">delete</a></div>{% empty %}<div class="empty">No blacklist entries.</div>{% endfor %}
+</section>
+<section class="panel">
+<div class="eyebrow">PIPELINE</div><h2>Non-blocking jobs</h2>
+<div class="task-actions">
+<form method="post" action="{% url 'tracker:start_task' %}">{% csrf_token %}<input type="hidden" name="kind" value="descriptions"><input name="limit" type="number" value="100"><button class="button primary">Fetch descriptions</button></form>
+<form method="post" action="{% url 'tracker:start_task' %}">{% csrf_token %}<input type="hidden" name="kind" value="score"><input name="limit" type="number" value="25"><button class="button primary">Run LLM + buzzwords</button></form>
+</div><div class="muted note">The browser returns immediately. The local worker performs the operation in the background and manages llama.cpp for LLM scoring.</div>
+</section>
+</div>
 {% endblock %}
