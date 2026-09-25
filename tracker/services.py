@@ -162,8 +162,7 @@ def fetch_job_description(referenznummer: str, sleep_seconds: float = 0.5):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
     desc_div = soup.select_one("#detail-beschreibung-text-container")
-    description = desc_div.get_text(separator="
-", strip=True) if desc_div else ""
+    description = desc_div.get_text(separator="\\n", strip=True) if desc_div else ""
     apply_link = ""
     if desc_div:
         for anchor in desc_div.find_all("a", href=True):
