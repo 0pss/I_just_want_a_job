@@ -30,6 +30,7 @@ from .models import (
     EmailMessage,
     Job,
     JobEvaluation,
+    JobSearch,
 )
 
 
