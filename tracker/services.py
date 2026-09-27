@@ -371,10 +371,7 @@ def evaluate_job(job: Job, profile: CandidateProfile, llama_server=None):
 
 
 def classify_email(email_message: EmailMessage):
-    content = f"FROM: {email_message.sender}
-SUBJECT: {email_message.subject}
-
-{email_message.body_text[:12000]}"
+    content = f"FROM: {email_message.sender}\nSUBJECT: {email_message.subject}\n\n{email_message.body_text[:12000]}"
     raw = llama_chat(
         [
             {"role": "system", "content": EMAIL_SYSTEM_PROMPT},
@@ -394,8 +391,7 @@ SUBJECT: {email_message.subject}
 
 
 def match_email_to_application(email_message: EmailMessage):
-    haystack = f"{email_message.subject}
-{email_message.body_text}".lower()
+    haystack = f"{email_message.subject}\n{email_message.body_text}".lower()
     ref_matches = [job for job in Job.objects.all() if job.referenznummer.lower() in haystack]
     if len(ref_matches) == 1:
         email_message.application = ref_matches[0].application
@@ -487,11 +483,7 @@ def extract_email_bodies(msg):
             text_parts.append(text)
         elif content_type == "text/html":
             html_parts.append(text)
-    return "
-
-".join(text_parts), "
-
-".join(html_parts)
+    return "\n\n".join(text_parts), "\n\n".join(html_parts)
 
 
 def sync_imap_messages(limit=100):
@@ -554,14 +546,7 @@ def generate_document(job: Job, document_type: str, profile: CandidateProfile):
                 {"role": "system", "content": DOCUMENT_SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": f"{prompts[document_type]}
-
-CANDIDATE PROFILE:
-{profile.profile_text}
-
-JOB:
-{job.titel} @ {job.firma}
-{job.beschreibung[:9000]}",
+                    "content": f"{prompts[document_type]}\n\nCANDIDATE PROFILE:\n{profile.profile_text}\n\nJOB:\n{job.titel} @ {job.firma}\n{job.beschreibung[:9000]}",
                 },
             ],
             temperature=0.2,
