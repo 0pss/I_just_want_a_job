@@ -23,6 +23,8 @@ from .models import (
     Application,
     ApplicationDocument,
     ApplicationEvent,
+    AppConfig,
+    BackgroundTask,
     BlacklistEntry,
     CandidateProfile,
     EmailMessage,
